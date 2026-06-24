@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Connecting… | Sido Pro FX</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%;
+    background:#0A0E1A; color:#F1F5F9;
+    font-family:'Inter',sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .wrap { text-align:center; width:100%; max-width:380px; }
+
+  .logo { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:32px; }
+  .logo svg { width:34px; height:34px; }
+  .logo span { font-size:21px; font-weight:800;
+    background:linear-gradient(135deg,#00E5FF,#7C3AED);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+  .spinner {
+    width:56px; height:56px; margin:0 auto 24px;
+    border:3px solid rgba(0,229,255,.12);
+    border-top-color:#00E5FF;
+    border-radius:50%;
+    animation:spin .85s linear infinite;
+  }
+  .spinner.done  { border-color:rgba(16,185,129,.3); border-top-color:#10B981; animation:none; }
+  .spinner.error { border-color:rgba(239,68,68,.3);  border-top-color:#EF4444; animation:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .icon { font-size:48px; margin-bottom:20px; display:none; }
+
+  h1 { font-size:20px; font-weight:800; margin-bottom:10px;
+    background:linear-gradient(135deg,#00E5FF,#7C3AED);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  p { font-size:13px; color:#94A3B8; line-height:1.7; }
+
+  .step {
+    display:flex; align-items:center; gap:12px;
+    background:#111827; border:1px solid rgba(255,255,255,.07);
+    border-radius:12px; padding:12px 14px; margin-top:12px; text-align:left;
+    transition:border-color .3s;
+  }
+  .step.active  { border-color:rgba(0,229,255,.4); }
+  .step.done    { border-color:rgba(16,185,129,.4); }
+  .step.failed  { border-color:rgba(239,68,68,.4); }
+  .step-num {
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    background:rgba(255,255,255,.07); display:flex; align-items:center;
+    justify-content:center; font-size:12px; font-weight:700; color:#94A3B8;
+    transition:all .3s;
+  }
+  .step.active  .step-num { background:rgba(0,229,255,.2); color:#00E5FF; }
+  .step.done    .step-num { background:rgba(16,185,129,.2); color:#10B981; }
+  .step.done    .step-num::after { content:'✓'; }
+  .step.failed  .step-num { background:rgba(239,68,68,.2); color:#EF4444; }
+  .step-text { font-size:12px; font-weight:600; color:#94A3B8; }
+  .step.active .step-text { color:#F1F5F9; }
+  .step.done   .step-text { color:#10B981; }
+  .step.failed .step-text { color:#EF4444; }
+
+  .err-box {
+    background:#111827; border:1px solid rgba(239,68,68,.3);
+    border-radius:12px; padding:14px 16px; margin-top:16px;
+    font-size:12px; color:#F87171; text-align:left;
+    word-break:break-word; line-height:1.6; display:none;
+  }
+  .btn-back {
+    display:none; margin-top:22px; padding:12px 28px;
+    background:linear-gradient(135deg,#00E5FF,#7C3AED);
+    color:#fff; text-decoration:none;
+    border-radius:12px; font-weight:700; font-size:14px;
+  }
+
+  .progress-wrap { height:3px; background:rgba(255,255,255,.07); border-radius:2px; margin-top:24px; overflow:hidden; }
+  .progress-bar  { height:3px; background:linear-gradient(90deg,#00E5FF,#7C3AED);
+                   border-radius:2px; width:0%; transition:width .5s ease; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#00E5FF"/>
+          <stop offset="1" stop-color="#7C3AED"/>
+        </linearGradient>
+      </defs>
+      <path d="M4 14 L14 4 L24 14 L14 24Z" stroke="url(#lg)" stroke-width="2" fill="none"/>
+      <circle cx="14" cy="14" r="4" fill="url(#lg)"/>
+    </svg>
+    <span>Sido Pro FX</span>
+  </div>
+
+  <div class="spinner" id="spinner"></div>
+  <div class="icon"   id="icon">⚠️</div>
+  <h1 id="title">Completing login…</h1>
+  <p  id="msg">Please wait while we securely connect your account.</p>
+
+  <!-- Step progress -->
+  <div class="step" id="step1">
+    <div class="step-num" id="s1n">1</div>
+    <div class="step-text">Verify authorization code &amp; state</div>
+  </div>
+  <div class="step" id="step2">
+    <div class="step-num" id="s2n">2</div>
+    <div class="step-text">Exchange code for access token</div>
+  </div>
+  <div class="step" id="step3">
+    <div class="step-num" id="s3n">3</div>
+    <div class="step-text">Request trading WebSocket URL</div>
+  </div>
+  <div class="step" id="step4">
+    <div class="step-num" id="s4n">4</div>
+    <div class="step-text">Authorize trading session</div>
+  </div>
+
+  <div class="err-box"  id="errBox"></div>
+  <a  class="btn-back"  id="backBtn" href="index.html">← Back to App</a>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+</div>
+<script>
+/* ═══════════════════════════════════════════════════
+   CONFIG — must match index.html exactly
+═══════════════════════════════════════════════════ */
+const CFG = {
+  APP_ID:       '33CMCtugHowMoinRyyCTS',
+  TOKEN_URL:    'https://auth.deriv.com/oauth2/token',
+  OTP_BASE:     'https://api.derivws.com/trading/v1/options/accounts',
+  REDIRECT_URI:  window.location.origin + window.location.pathname
+};
+
+/* ─── UI helpers ─── */
+const $  = id => document.getElementById(id);
+const pb = pct => { $('progressBar').style.width = pct + '%'; };
+
+function stepActive(n)  {
+  $('step'+n).className = 'step active';
+  $('s'+n+'n').textContent = n;
+}
+function stepDone(n)    {
+  $('step'+n).className = 'step done';
+  $('s'+n+'n').textContent = '';   /* checkmark via CSS */
+}
+function stepFailed(n)  { $('step'+n).className = 'step failed'; }
+
+function showError(title, detail) {
+  $('spinner').style.display = 'none';
+  $('icon').style.display    = 'block';
+  $('title').textContent     = title;
+  $('msg').textContent =
+    'Go back to the app and try again.';
+  $('backBtn').style.display = 'inline-block';
+  if (detail) {
+    $('errBox').style.display = 'block';
+    $('errBox').textContent   = detail;
+  }
+}
+
+function showSuccess() {
+  $('spinner').classList.add('done');
+  $('title').textContent = 'Connected!';
+  $('msg').textContent   = 'Redirecting you back to Sido Pro FX…';
+  pb(100);
+}
+
+/* ─── Main PKCE callback handler ─── */
+async function handleCallback() {
+  const params        = new URLSearchParams(window.location.search);
+  const code          = params.get('code');
+  const returnedState = params.get('state');
+  const oauthError    = params.get('error');
+  const oauthErrDesc  = params.get('error_description');
+
+  pb(10);
+
+  /* ── Case 1: Deriv returned an explicit error ── */
+  if (oauthError) {
+    const msg = oauthErrDesc || oauthError;
+    stepFailed(1);
+    sessionStorage.setItem('db_oauth_error', msg);
+    showError('Deriv rejected the login.', msg);
+    setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+    return;
+  }
+
+  /* ── Case 2: Page opened directly (no code) ── */
+  if (!code) {
+    showError(
+      'No authorization code received.',
+      'Open this URL only by tapping "Log In with Deriv" inside the app — not directly.'
+    );
+    return;
+  }
+
+  /* ════════════ STEP 1 — Verify code + state ════════════ */
+  stepActive(1);
+  pb(20);
+
+  const expectedState = sessionStorage.getItem('db_pkce_state');
+  const codeVerifier  = sessionStorage.getItem('db_pkce_verifier');
+
+  if (!expectedState || !codeVerifier) {
+    stepFailed(1);
+    showError('Session expired.', 'Your login session expired or this was opened in a new tab. Please start the login again.');
+    return;
+  }
+  if (returnedState !== expectedState) {
+    stepFailed(1);
+    showError('Security check failed (state mismatch).', 'The state parameter returned by Deriv does not match. Login rejected for your protection.');
+    return;
+  }
+  stepDone(1);
+  pb(30);
+
+  /* ════════════ STEP 2 — Exchange code → access_token ════════════ */
+  stepActive(2);
+  pb(45);
+
+  let accessToken, accountId;
+  try {
+    const body = new URLSearchParams({
+      grant_type:    'authorization_code',
+      client_id:     CFG.APP_ID,
+      code:          code,
+      code_verifier: codeVerifier,
+      redirect_uri:  CFG.REDIRECT_URI
+    });
+
+    const res = await fetch(CFG.TOKEN_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    body.toString()
+    });
+
+    let data;
+    try { data = await res.json(); } catch(e) {
+      throw new Error('Could not parse token response. HTTP ' + res.status);
+    }
+
+    if (!res.ok || !data.access_token) {
+      throw new Error(data.error_description || data.error || ('HTTP ' + res.status));
+    }
+
+    accessToken = data.access_token;
+    accountId   = data.account_id || data.sub || null;
+
+    /* Store token + expiry */
+    const expiresMs = data.expires_in
+      ? (data.expires_in * 1000) - 30000
+      : 3600 * 1000;
+    sessionStorage.setItem('db_access_token',  accessToken);
+    sessionStorage.setItem('db_token_expiry',  String(Date.now() + expiresMs));
+    if (data.refresh_token) sessionStorage.setItem('db_refresh_token', data.refresh_token);
+    if (accountId)          sessionStorage.setItem('db_account_id',    accountId);
+
+    /* Clean up one-time PKCE values */
+    sessionStorage.removeItem('db_pkce_verifier');
+    sessionStorage.removeItem('db_pkce_state');
+    window.history.replaceState({}, '', window.location.pathname);
+
+    stepDone(2);
+    pb(60);
+
+  } catch (err) {
+    stepFailed(2);
+    /* Token exchange failed — store token if we somehow got one,
+       otherwise pass the error so index.html can show the right message */
+    sessionStorage.setItem('db_oauth_error',
+      'Token exchange failed: ' + err.message);
+    showError('Token exchange failed.', err.message);
+    setTimeout(() => { window.location.href = 'index.html'; }, 3500);
+    return;
+  }
+
+  /* ════════════ STEP 3 — Get OTP / WebSocket URL ════════════ */
+  stepActive(3);
+  pb(75);
+
+  /* accountId comes from the token response; if missing we fall back
+     to fetching it from the authorize WS call in index.html later */
+  if (accountId) {
+    try {
+      const otpRes = await fetch(
+        `${CFG.OTP_BASE}/${accountId}/otp`,
+        {
+          method:  'POST',
+          headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Deriv-App-ID':  CFG.APP_ID,
+            'Content-Type':  'application/json'
+          }
+        }
+      );
+
+      let otpData;
+      try { otpData = await otpRes.json(); } catch(e) { otpData = {}; }
+
+      if (otpRes.ok && (otpData.otp || otpData.ws_url || otpData.url)) {
+        const wsUrl = otpData.ws_url || otpData.url || null;
+        const otp   = otpData.otp   || null;
+        if (wsUrl) sessionStorage.setItem('db_ws_url', wsUrl);
+        if (otp)   sessionStorage.setItem('db_otp',    otp);
+        stepDone(3);
+        pb(88);
+      } else {
+        /* OTP endpoint returned unexpected shape — not fatal,
+           index.html will attempt direct authorize fallback */
+        stepDone(3);   /* optimistic */
+        pb(88);
+        sessionStorage.setItem('db_otp_skipped', '1');
+      }
+    } catch (err) {
+      /* Network error on OTP — not fatal, attempt fallback in index.html */
+      stepDone(3);
+      sessionStorage.setItem('db_otp_skipped', '1');
+      pb(88);
+    }
+  } else {
+    /* No accountId in token response — skip OTP, let index.html derive it
+       after the first authorize ws message */
+    stepDone(3);
+    sessionStorage.setItem('db_otp_skipped', '1');
+    pb(88);
+  }
+
+  /* ════════════ STEP 4 — Hand off to index.html ════════════ */
+  stepActive(4);
+  pb(95);
+  stepDone(4);
+  showSuccess();
+
+  setTimeout(() => { window.location.href = 'index.html'; }, 700);
+}
+
+handleCallback();
+</script>
+</body>
+</html>
